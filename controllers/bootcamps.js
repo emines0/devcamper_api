@@ -1,3 +1,6 @@
+// Error handling middleware
+const ErrorResponse = require('../utils/errorResponse.js');
+
 // @desc: Controller for bootcamps
 const Bootcamp = require('../models/Bootcamp.js');
 
@@ -11,7 +14,7 @@ exports.getBootcamps = async (req, res, next) => {
       .status(200)
       .json({ success: true, count: bootcamps.length, data: bootcamps });
   } catch (err) {
-    res.status(400).json({ success: false });
+    next(err);
   }
 };
 
@@ -24,12 +27,13 @@ exports.getBootcamp = async (req, res, next) => {
 
     // If the ID is not in the database, return an error
     if (!bootcamp) {
-      return res.status(400).json({ success: false });
+      return next(
+        new ErrorResponse(`Bootcamp not found with id of ${req.params.id}`, 404)
+      );
     }
 
     res.status(200).json({ success: true, data: bootcamp });
   } catch (err) {
-    // res.status(400).json({ success: false });
     next(err);
   }
 };
@@ -43,7 +47,7 @@ exports.createBootcamp = async (req, res, next) => {
 
     res.status(201).json({ success: true, data: bootcamp });
   } catch (err) {
-    res.status(400).json({ success: false });
+    next(err);
   }
 };
 
@@ -53,7 +57,7 @@ exports.createBootcamp = async (req, res, next) => {
 exports.updateBootcamp = async (req, res, next) => {
   try {
     // Find the bootcamp by ID and update it
-    const bootcamp = await Bootcamp.findOneAndUpdate(req.param.id, req.body, {
+    const bootcamp = await Bootcamp.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
     });
@@ -66,7 +70,7 @@ exports.updateBootcamp = async (req, res, next) => {
     // Return a success message
     res.status(200).json({ success: true, data: bootcamp });
   } catch (err) {
-    res.status(400).json({ success: false });
+    next(err);
   }
 };
 
@@ -87,6 +91,6 @@ exports.deleteBootcamp = async (req, res, next) => {
     res.status(200).json({ success: true, data: {} });
   } catch (err) {
     // Return an error message
-    res.status(400).json({ success: false });
+    next(err);
   }
 };

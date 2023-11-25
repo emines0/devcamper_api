@@ -1,5 +1,10 @@
 const mongoose = require('mongoose');
+
+// Slugify - creates a URL friendly version of the name
 const slugify = require('slugify');
+
+// Geocoder - converts address to coordinates
+const geocoder = require('../utils/geocoder');
 
 const BootcampSchema = new mongoose.Schema({
   name: {
@@ -105,6 +110,38 @@ BootcampSchema.pre('save', function (next) {
   // console.log('Slugify ran', this.name);
   // lowercase: true - converts the slug to lowercase
   this.slug = slugify(this.name, { lower: true });
+  next();
+});
+
+// Geocode & create location field
+// pre() is a middleware function that runs before the save() function
+BootcampSchema.pre('save', async function (next) {
+  // console.log('Geocoder ran', this.address);
+  // this.address is the address that is passed in from the body
+  const loc = await geocoder.geocode(this.address);
+  // console.log(loc);
+
+  // Set the location coordinates
+  // The coordinates are an array of numbers
+  // The first number is the longitude
+  // The second number is the latitude
+  // The third number is the altitude
+  // The fourth number is the accuracy
+  // The fifth number is the formatted address
+  this.location = {
+    type: 'Point',
+    coordinates: [loc[0].longitude, loc[0].latitude],
+    formattedAddress: loc[0].formattedAddress,
+    street: loc[0].streetName,
+    city: loc[0].city,
+    state: loc[0].stateCode,
+    zipcode: loc[0].zipcode,
+    country: loc[0].countryCode,
+  };
+
+  // Do not save address in DB
+  this.address = undefined;
+
   next();
 });
 

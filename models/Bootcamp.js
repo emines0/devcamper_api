@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const slugify = require('slugify');
 
 const BootcampSchema = new mongoose.Schema({
   name: {
@@ -96,6 +97,15 @@ const BootcampSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+});
+
+// Create bootcamp slug from the name
+// pre() is a middleware function that runs before the save() function
+BootcampSchema.pre('save', function (next) {
+  // console.log('Slugify ran', this.name);
+  // lowercase: true - converts the slug to lowercase
+  this.slug = slugify(this.name, { lower: true });
+  next();
 });
 
 // Export the model

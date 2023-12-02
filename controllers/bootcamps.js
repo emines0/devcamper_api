@@ -4,6 +4,9 @@ const ErrorResponse = require('../utils/errorResponse.js');
 // Async handler middleware (to avoid having to write try/catch blocks in every controller)
 const asyncHandler = require('../middleware/async.js');
 
+// Geocoder middleware
+const geocoder = require('../utils/geocoder.js');
+
 // @desc: Controller for bootcamps
 const Bootcamp = require('../models/Bootcamp.js');
 
@@ -11,8 +14,28 @@ const Bootcamp = require('../models/Bootcamp.js');
 // @route   GET /api/v1/bootcamps
 // @access  Public
 exports.getBootcamps = asyncHandler(async (req, res, next) => {
+  let query;
+  let queryStr = JSON.stringify(req.query);
+
+  // Create operators ($gt, $gte, $lt, $lte, $in) (mongo db operators)
+  // \b is a word boundary
+  // g is a global search
+  // $gt is greater than
+  // $gte is greater than or equal to
+  // $lt is less than
+  // $lte is less than or equal to
+  // $in is in an array
+
+  queryStr = queryStr.replace(
+    /\b(gt|gte|lt|lte|in)\b/g,
+    (match) => `$${match}`
+  );
+
+  // Find bootcamps based on query
+  query = Bootcamp.find(JSON.parse(queryStr));
+
   // Find all bootcamps
-  const bootcamps = await Bootcamp.find();
+  const bootcamps = await query;
   res
     .status(200)
     .json({ success: true, count: bootcamps.length, data: bootcamps });
@@ -78,4 +101,32 @@ exports.deleteBootcamp = asyncHandler(async (req, res, next) => {
 
   // Return a success message
   res.status(200).json({ success: true, data: {} });
+});
+
+// @desc    Get bootcamps within a radius
+// @route   GET /api/v1/bootcamps/radius/:zipcode/:distance/
+// @access  Private
+exports.getBootcampsInRadius = asyncHandler(async (req, res, next) => {
+  // Get the zipcode, distance, and unit from the request parameters
+  const { zipcode, distance } = req.params;
+
+  // Get the latitude and longitude from the geocoder
+  const loc = await geocoder.geocode(zipcode);
+  const lat = loc[0].latitude;
+  const lng = loc[0].longitude;
+
+  // Calculate the radius using radians
+  // Divide distance by radius of Earth
+  // Earth radius = 3,963 miles / 6,378 kilometers
+  const radius = distance / 3963;
+
+  // Find bootcamps within the radius
+  const bootcamps = await Bootcamp.find({
+    location: { $geoWithin: { $centerSphere: [[lng, lat], radius] } },
+  });
+  console.log('HERE');
+  // Return a success message
+  res
+    .status(200)
+    .json({ success: true, count: bootcamps.length, data: bootcamps });
 });

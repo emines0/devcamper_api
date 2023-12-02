@@ -15,7 +15,20 @@ const Bootcamp = require('../models/Bootcamp.js');
 // @access  Public
 exports.getBootcamps = asyncHandler(async (req, res, next) => {
   let query;
-  let queryStr = JSON.stringify(req.query);
+
+  // Copy req.query
+  const reqQuery = { ...req.query };
+
+  // Fields to exclude
+  const removeFields = ['select', 'sort', 'page', 'limit'];
+
+  // Loop through removeFields and delete them from reqQuery
+  removeFields.forEach((param) => delete reqQuery[param]);
+
+  console.log(reqQuery);
+
+  // Create a query string
+  let queryStr = JSON.stringify(reqQuery);
 
   // Create operators ($gt, $gte, $lt, $lte, $in) (mongo db operators)
   // \b is a word boundary
@@ -31,8 +44,18 @@ exports.getBootcamps = asyncHandler(async (req, res, next) => {
     (match) => `$${match}`
   );
 
-  // Find bootcamps based on query
+  // Find rescourse based on query
+  // If query is empty (i.e. no query), find all rescources
   query = Bootcamp.find(JSON.parse(queryStr));
+
+  // Select fields
+  // If there is a select query, select the fields
+  if (req.query.select) {
+    // Split the select query by commas
+    const fields = req.query.select.split(',').join(' ');
+    // Select the fields
+    query = query.select(fields);
+  }
 
   // Find all bootcamps
   const bootcamps = await query;

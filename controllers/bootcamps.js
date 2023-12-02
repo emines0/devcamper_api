@@ -57,11 +57,57 @@ exports.getBootcamps = asyncHandler(async (req, res, next) => {
     query = query.select(fields);
   }
 
+  // Sort
+  // If there is a sort query, sort the fields
+  if (req.query.sort) {
+    // Split the sort query by commas
+    const sortBy = req.query.sort.split(',').join(' ');
+    // Sort the fields
+    query = query.sort(sortBy);
+  } else {
+    // Sort by date (descending)
+    query = query.sort('-createdAt');
+  }
+
+  // Pagination
+  // If there is a page query, paginate the fields
+  const page = parseInt(req.query.page, 10) || 1;
+  const limit = parseInt(req.query.limit, 10) || 25; // 25 results per page
+  const startIndex = (page - 1) * limit;
+  const endIndex = page * limit;
+  const total = await Bootcamp.countDocuments(); // Count the number of bootcamps
+
+  // Skip the number of results
+  query = query.skip(startIndex).limit(limit);
+
   // Find all bootcamps
   const bootcamps = await query;
-  res
-    .status(200)
-    .json({ success: true, count: bootcamps.length, data: bootcamps });
+
+  // Pagination result
+  const pagination = {};
+
+  // If there is a previous page, add it to the pagination object
+  if (endIndex < total) {
+    pagination.next = {
+      page: page + 1,
+      limit,
+    };
+  }
+
+  // If there is a next page, add it to the pagination object
+  if (startIndex > 0) {
+    pagination.prev = {
+      page: page - 1,
+      limit,
+    };
+  }
+
+  res.status(200).json({
+    success: true,
+    count: bootcamps.length,
+    pagination,
+    data: bootcamps,
+  });
 });
 
 // @desc    Get single bootcamp

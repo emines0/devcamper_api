@@ -4,23 +4,23 @@ const CourseSchema = new mongoose.Schema({
   title: {
     type: String,
     trim: true,
-    required: [true, 'Please add a course title.'],
+    required: [true, 'Please add a course title'],
   },
   description: {
     type: String,
-    required: [true, 'Please add a description.'],
+    required: [true, 'Please add a description'],
   },
   weeks: {
     type: String,
-    required: [true, 'Please add number of weeks.'],
+    required: [true, 'Please add number of weeks'],
   },
   tuition: {
     type: Number,
-    required: [true, 'Please add a tuition cost.'],
+    required: [true, 'Please add a tuition cost'],
   },
   minimumSkill: {
     type: String,
-    required: [true, 'Please add a minimum skill.'],
+    required: [true, 'Please add a minimum skill'],
     enum: ['beginner', 'intermediate', 'advanced'],
   },
   scholarshipAvailable: {
@@ -31,9 +31,6 @@ const CourseSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
-  // Relationship between Course and Bootcamp
-  // A course belongs to a bootcamp
-  // A bootcamp can have many courses
   bootcamp: {
     type: mongoose.Schema.ObjectId,
     ref: 'Bootcamp',

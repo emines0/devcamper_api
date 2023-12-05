@@ -46,7 +46,7 @@ exports.getBootcamps = asyncHandler(async (req, res, next) => {
 
   // Find rescourse based on query
   // If query is empty (i.e. no query), find all rescources
-  query = Bootcamp.find(JSON.parse(queryStr));
+  query = Bootcamp.find(JSON.parse(queryStr)).populate('courses');
 
   // Select fields
   // If there is a select query, select the fields
@@ -115,7 +115,7 @@ exports.getBootcamps = asyncHandler(async (req, res, next) => {
 // @access  Public
 exports.getBootcamp = asyncHandler(async (req, res, next) => {
   // Find the bootcamp by ID
-  const bootcamp = await Bootcamp.findById(req.params.id);
+  const bootcamp = await Bootcamp.findById(req.params.id).populate('courses');
 
   // If the ID is not in the database, return an error
   if (!bootcamp) {
@@ -160,13 +160,17 @@ exports.updateBootcamp = asyncHandler(async (req, res, next) => {
 // @route   DELETE /api/v1/bootcamps/:id
 // @access  Private
 exports.deleteBootcamp = asyncHandler(async (req, res, next) => {
-  // Find the bootcamp by ID and delete it
-  const bootcamp = await Bootcamp.findByIdAndDelete(req.params.id);
+  // Find the bootcamp by ID
+  const bootcamp = await Bootcamp.findById(req.params.id);
 
   // If the ID is not in the database, return an error
   if (!bootcamp) {
     return res.status(400).json({ success: false });
   }
+
+  // Delete the bootcamp
+  // This will trigger the pre 'remove' middleware in the Bootcamp schema
+  await bootcamp.deleteOne();
 
   // Return a success message
   res.status(200).json({ success: true, data: {} });
@@ -193,7 +197,6 @@ exports.getBootcampsInRadius = asyncHandler(async (req, res, next) => {
   const bootcamps = await Bootcamp.find({
     location: { $geoWithin: { $centerSphere: [[lng, lat], radius] } },
   });
-  console.log('HERE');
   // Return a success message
   res
     .status(200)

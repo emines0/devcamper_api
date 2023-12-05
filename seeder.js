@@ -1,4 +1,4 @@
-// This file is used to seed the database with data
+node; // This file is used to seed the database with data
 const fs = require('fs');
 
 const mongoose = require('mongoose');
